@@ -2,6 +2,8 @@
 
 Read this at Stage 0, before scope is resolved. It defines how to parse the arguments, which argument combinations stop the review, the quick-review short-circuit, and what each mode returns.
 
+Whatever this invocation emits as its own response — the depth path's receipt, a conflicting-argument failure, or a skip-condition JSON, in any mode — is the last thing this skill writes for this call. It ends this skill, not the turn: when a caller such as `lfg` invoked this review inline, the caller runs in this same session, and its next step follows whatever this call just emitted.
+
 ## Argument Parsing
 
 Parse the arguments you were invoked with for optional tokens. Strip each recognized token before interpreting the remainder as a PR number, GitHub URL, or branch name.

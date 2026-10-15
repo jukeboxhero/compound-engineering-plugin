@@ -228,16 +228,22 @@ describe("inline child returns do not end the caller's turn", () => {
     // "stop"/"report"/"summarize" ending read as the final word of the turn.
     // (Step 3's ce-simplify-code had the same gap, independently closed by
     // #1859 with its own equivalent wording before this branch could land.)
-    // ce-code-review's dispatch context (the one inline in lfg's turn) never
-    // opens finish-review.md -- that file is read only by the ephemeral
-    // report-leaf subagent on the full spine (SKILL.md: "which the leaves
-    // read from disk and you do not open"). The inline context's own three
-    // mode:agent emission points are depth-paths.md (lite/focused receipt)
-    // and finish-input.md (the full path's verbatim relay).
-    "skills/ce-code-review/references/depth-paths.md": readRepoFile("skills/ce-code-review/references/depth-paths.md"),
-    "skills/ce-code-review/references/finish-input.md": readRepoFile("skills/ce-code-review/references/finish-input.md"),
-    "skills/ce-test-browser/references/route-and-report.md": readRepoFile("skills/ce-test-browser/references/route-and-report.md"),
+    // Each of these has more than one terminal-emission path (an early
+    // failure/skip/preflight stop, as well as its own success report) --
+    // a PR review caught the first, narrower attempt covering only the
+    // happy path for each skill. ce-code-review's general statement lives
+    // in modes-and-output.md, which Stage 0 reads before any of its several
+    // stop points can fire. ce-test-browser's SKILL.md Done: line already
+    // names both its terminal shapes, so the statement joins it there.
+    // ce-commit-push-pr's and ce-babysit-pr's SKILL.md files sit at Codex's
+    // 8000-byte budget with no room for this sentence, so each one's
+    // general statement lives in its always-read-first Step reference
+    // instead (apply-and-handoff.md; setup.md, alongside pipeline.md's own
+    // Step 3 case).
+    "skills/ce-code-review/references/modes-and-output.md": readRepoFile("skills/ce-code-review/references/modes-and-output.md"),
+    "skills/ce-test-browser/SKILL.md": readRepoFile("skills/ce-test-browser/SKILL.md"),
     "skills/ce-commit-push-pr/references/apply-and-handoff.md": readRepoFile("skills/ce-commit-push-pr/references/apply-and-handoff.md"),
+    "skills/ce-babysit-pr/references/setup.md": readRepoFile("skills/ce-babysit-pr/references/setup.md"),
     "skills/ce-babysit-pr/references/pipeline.md": readRepoFile("skills/ce-babysit-pr/references/pipeline.md"),
   }
 

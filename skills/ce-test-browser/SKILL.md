@@ -8,12 +8,12 @@ argument-hint: "[PR number, branch name, 'current', or --port PORT]"
 
 Run end-to-end browser tests on pages affected by a PR or branch using the best approved browser driver available in the active harness.
 
-**Done:** the run ends by reporting what it found — either the summary, with every affected route marked Pass, Fail, or Skip and each Skip carrying its reason, or, when a preflight blocker stops testing before any route can be exercised, the blocker and what would clear it. Reaching neither, or dropping a route from the summary because nobody could reach it, is the failure this done condition exists to prevent.
+**Done:** the run ends by reporting what it found — either the summary, with every affected route marked Pass, Fail, or Skip and each Skip carrying its reason, or, when a preflight blocker stops testing before any route can be exercised, the blocker and what would clear it. Reaching neither, or dropping a route from the summary because nobody could reach it, is the failure this done condition exists to prevent. Whichever one this run reports, in `mode:pipeline` that report is the last thing this skill writes: it ends this skill, not the turn, and the caller runs in this same session with its next step following the report.
 
 ## Modes
 
 - **Manual (default):** the user controls the dev server. When the fallback driver is `agent-browser`, ask whether to run headed or headless.
-- **Pipeline (`mode:pipeline`):** invoked by LFG or another automated runner. The run is unattended — never block on a question. Read `references/pipeline-orchestration.md` from this skill's directory and follow it; it overrides port selection (step 4, Determine the dev server port), dev-server startup (step 5, Verify the dev server is running), and visibility prompts (step 6, Set visibility), running the same port script with `--free` inside the block that starts the server. The step 10 summary is the last thing this mode writes. It ends this skill, not the turn: the caller runs in this same session, and its next step follows the summary.
+- **Pipeline (`mode:pipeline`):** invoked by LFG or another automated runner. The run is unattended — never block on a question. Read `references/pipeline-orchestration.md` from this skill's directory and follow it; it overrides port selection (step 4, Determine the dev server port), dev-server startup (step 5, Verify the dev server is running), and visibility prompts (step 6, Set visibility), running the same port script with `--free` inside the block that starts the server.
 
 ## Browser Driver Policy
 
