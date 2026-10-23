@@ -366,6 +366,7 @@ describe("skill-eval-cell catalog", () => {
       "ce-setup/instruction-file-covered-offers-nothing",
       "ce-setup/instruction-file-gap-offers-store-and-directive",
       "lfg/followup-capture-floor-rejects-noise",
+      "lfg/followup-capture-preserves-earlier-run",
       "lfg/followup-capture-silent-when-clean",
     ])
   })

@@ -299,7 +299,10 @@ describe("lfg out-of-scope follow-up capture", () => {
   })
 
   test("each packaged discovery carries the three things a later reader needs", () => {
-    for (const element of ["description", "origin anchor", "code pointers"]) {
+    // Bolded forms, not the bare words: "description" also occurs in this slice as
+    // "description-update mode", so the bare-word pin could not fail when the
+    // package bullets were removed (WOR-92 review finding, anchor 100).
+    for (const element of ["**description**", "**origin anchor**", "**code pointers**"]) {
       expect(capture, `the package must name ${element}`).toContain(element)
     }
     // The ticket anchor is absent on the plan route, so the order degrades.
@@ -321,6 +324,13 @@ describe("lfg out-of-scope follow-up capture", () => {
     // body, which would otherwise reopen a finding ticked closed at step 10.
     expect(capture).toMatch(/description-update mode/)
     expect(capture).toMatch(/current body/)
+    // The carry-forward is stated as a condition over everything the recompose
+    // drops, not as a list of what this run produced. Round 1 glossed it into
+    // such a list and every item was a this-run artifact, so a second run
+    // silently erased the first run's discoveries; these two pin the property
+    // and the merge direction that replaced the list.
+    expect(capture).toMatch(/whether or not this run produced it/)
+    expect(capture).toMatch(/an earlier run left[\s\S]{0,120}rather than replace/)
   })
 
   test("an observation made earlier in the run is noted when it occurs", () => {
