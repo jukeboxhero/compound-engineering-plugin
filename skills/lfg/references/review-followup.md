@@ -2,6 +2,8 @@
 
 These are the quality steps that run after implementation and before shipping. On the defect route the implementation was `ce-debug`'s fix; `references/debug-return.md` names what each step below receives in place of the plan path. `ce-code-review` is review-only. LFG applies eligible fixes itself, then commits.
 
+From here on, whenever the run observes a defect or gap in code or tooling it is not changing, note it in your narration as it occurs. The close-out reviews that narration for follow-ups worth handing on, and an observation made in these steps is the one it would otherwise have lost.
+
 ## The shipping precondition, in these steps
 
 When the repo has no remote, the run finishes locally. That is a final state, not an error: never retry a push or hunt for a remote. Step 5 still makes every commit it calls for; only the pushes and the records that would live on the PR are dropped. With no PR to hold the unapplied findings, step 6 files them as tracker tickets and the DONE report states the rest. Never write them to a committed file nobody will read.

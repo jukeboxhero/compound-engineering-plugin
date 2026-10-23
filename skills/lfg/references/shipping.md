@@ -42,7 +42,7 @@ This check applies to whichever handoff produced the result. Keep the `needs-hum
 
 ## Step 11 — close out
 
-Everything below happens before LFG outputs `<promise>DONE</promise>`. Write the close-out, the `## Needs your decision` framing, and any progress you narrate to the user through the `ce-noslop` skill; the residual entries themselves are rendered verbatim.
+Everything below happens before LFG outputs `<promise>DONE</promise>`. Write the close-out, the `## Needs your decision` framing, and any progress you narrate to the user through the `ce-noslop` skill; the residual entries and the discovery entries below are rendered verbatim.
 
 ### Rendering the user-runnable invocations
 
@@ -57,6 +57,30 @@ If step 9 recorded a `New concepts:` trailer, first echo one line per concept: `
 If an open PR exists, add one line pointing the user to the interactive watch-to-merge (pipeline mode stopped at "CI decided," not "merged"): `PR is moving — run <rendered ce-babysit-pr invocation> to watch it through review to merge.`
 
 When step 9/10 used a stack handoff, render that invocation for the **bottom open non-draft** PR URL with the same `posture:stack-ready` or `posture:stack-land` token — never a bare current-branch URL that would supersede stack scope.
+
+### Follow-ups the run discovered
+
+Review what this run surfaced for a defect or gap it observed in code or tooling it did not change, and that is separable work someone else could pick up. The usual case is tooling the run depended on and worked around; whether anything else qualifies is decided by that condition, not by resemblance to that case. The pass neither classifies a discovery nor files, links, or deduplicates it.
+
+Review what you hold: your own narration across the run, and the structured returns the child skills gave you. This is not a fresh pass over the repository and not a second review. An implementation that ran on another model returns its fields without its narration, so that phase is not visible here.
+
+The floor is whether a reasonable reviewer would open a ticket for it. A defect another person could reproduce on a clean checkout, or tooling that had to be worked around, clears the floor; prose drift such as a stale cross-reference or a step-number mismatch does not. Leave out anything already in scope for this change or already decided and recorded elsewhere — a plan's non-goals, its deferred follow-up items and its assumptions, step 6's residuals, a flagged `settled_decision_conflicts` entry, a review's `residual_risks` or `testing_gaps` and the findings it rejected, what `ce-simplify-code` deliberately left alone, a check that passed on rerun, a problem local to this machine rather than reproducible for someone else, and a workaround the contract documents as an intended path.
+
+Each discovery carries three things:
+
+- a **description** short enough to scan and specific enough that a reader who was not in this run can tell what is wrong and why it matters;
+- an **origin anchor**, the first of these the run has: the issue of record or the issue reference the run was invoked with, the PR URL, the review `run_id` and `artifact_path`, the branch and head SHA, the plan path;
+- **code pointers** as repo-relative paths, or path and line, that resolve as written.
+
+Performing this review is unconditional; the record is what is conditional. A run that found nothing writes no section, no placeholder, and no "none found" line, in the PR body or the report.
+
+**When a PR exists**, compose `## Follow-ups discovered in this run`, one plain `-` bullet per discovery. It stays separate from `## Unapplied review findings`, which holds what step 6 left for this PR's reviewer, and it takes plain bullets rather than checkboxes because nothing in this PR closes a discovery. Open it by naming its reader and their move: the person reviewing this PR carries an entry onward or drops it. When the set is non-empty and this run's implementation ran on another model, add one line saying that phase's narration was not visible, so the section is not read as a sweep of the whole run.
+
+Get it onto the PR by invoking `ce-commit-push-pr mode:pipeline` in its description-update mode against the PR URL you hold. Step 9's description-update sentence covers only the case where a PR already existed, so this is the close-out's own invocation. That mode recomposes the whole body and preserves only an enumerated set of sections verbatim, so read the PR's current body first and pass its live `## Unapplied review findings` section through unchanged — a finding the reviewer ticked closed while the PR was being watched must not come back open. The invocation edits the description and nothing else: no commit, no push, no second watch.
+
+**When no PR exists**, the report carries the set and is the only record it gets. Never write it to a committed file nobody will read.
+
+A discovery appears once, even when it was visible earlier in the run.
 
 ### The optional next-work offer
 

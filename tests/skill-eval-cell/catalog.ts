@@ -37,6 +37,8 @@ const ANNOTATION_WAIT_BASE_REF = "d1734f7ed5341b6d0b683405da82895f0a0a25f7"
 /** main before streak interpretation accounted for estimated baselines and candidate selection (#1698). */
 const RETUNE_STREAK_BASE_REF = "53af1a2eab6415be9881c1987dbc986dcb54465c"
 export const SUSTAINED_HANDOFF_BASE_REF = "153e605e1622154a0d7da095fceed13edcb68bf7"
+/** main before the close-out reviewed the finished run for out-of-scope discoveries (WOR-92). */
+export const FOLLOWUP_CAPTURE_BASE_REF = "f78f006b53b2c734cb85446e2c8656fd26113f55"
 /** main before judgment-bound escalations were adjudicated through ce-pov instead of parking as needs-human. */
 export const ADJUDICATE_BASE_REF = "020c5e10d49aed19ee9354917780e94e665f5977"
 /** main before the resolver weighed whether an existing signal already bounds a true finding's failure. */
@@ -172,6 +174,16 @@ const UNDERSTANDING_BASE_REF = "8df67793b9733d2220fa9a7fc37139931471af62"
 const BEHAVIOR_TRACE_BASE_REF = "c152896f1cda13548fc1a05b2aff88caf8ae8dba"
 
 const FIX = "tests/skill-eval-cell/fixtures"
+
+/**
+ * Shared framing for the close-out follow-up-capture cells (WOR-92). The probe asks
+ * for the section text because the PR-body section is the observable; `NO SECTION` is
+ * how the probe encodes "write nothing", not a placeholder the skill would ever emit.
+ */
+const CAPTURE_PREFIX =
+  "Use lfg for this checkpoint: the run is at step 11's close-out. A PR is open. Resolve only the follow-up capture for the finished run, from the narration below. "
+const CAPTURE_TAIL =
+  " Return between the markers RESULT-START and RESULT-END exactly the PR-body section you would add, or the single line NO SECTION if you would add none. Then stop. Do not invoke any skills, dispatch, edit files, or run tests."
 /** main before ce-noslop named claim certainty and ruled out semicolons as em dash substitutes. */
 const NOSLOP_FIX_LIMITS_BASE_REF = "67035e931c5cb26e80f198a7019a4502a9788273"
 
@@ -3490,6 +3502,63 @@ Use "Correct widget limit" as the description in the subject and any required bo
       // it invokes or was stopped at. "Planning is the first step" is narration, not that.
       must_include: ["ce-plan"],
       actions: "none",
+    },
+  },
+  {
+    id: "lfg/followup-capture-packages-discovery",
+    baseline_ref: FOLLOWUP_CAPTURE_BASE_REF,
+    skill: "lfg",
+    cohort: "resized",
+    key_behavior: "judgment",
+    read_only: true,
+    fixture: `${FIX}/tiny-lib`,
+    timeout_secs: 180,
+    why: "The close-out must package a defect the run observed in tooling it did not change. The probe asks for the section text because the artifact is the observable; NO SECTION is how the probe encodes silence, not a placeholder the skill would ever write.",
+    pre_contract: "The close-out echoed new concepts and the open PR, and reviewed nothing for out-of-scope discoveries.",
+    task: `${CAPTURE_PREFIX}Narration: implemented the --quiet flag and its test; while running the suite I found scripts/check-fixtures.sh exits 1 on every clean checkout because it globs a directory that no longer exists, so I bypassed it and ran bun test directly; the flag work itself is complete and green.${CAPTURE_TAIL}`,
+    grade: {
+      must_include: ["Follow-ups discovered in this run"],
+      result_must_include: ["check-fixtures"],
+      actions: "none",
+      delegates: "none",
+    },
+  },
+  {
+    id: "lfg/followup-capture-silent-when-clean",
+    skill: "lfg",
+    cohort: "resized",
+    key_behavior: "judgment",
+    read_only: true,
+    post_only: true,
+    fixture: `${FIX}/tiny-lib`,
+    timeout_secs: 180,
+    why: "Guards the other direction: a run that surfaced nothing writes no section. Post-only because a tree with no capture prose cannot over-fire, so this arm can only fail after the change.",
+    pre_contract: "No capture pass existed, so there was nothing to over-fire.",
+    task: `${CAPTURE_PREFIX}Narration: implemented the --quiet flag, added its test, ran the suite green, and committed. Nothing else came up.${CAPTURE_TAIL}`,
+    grade: {
+      must_include: ["NO SECTION"],
+      result_must_not_include: ["Follow-ups discovered in this run"],
+      actions: "none",
+      delegates: "none",
+    },
+  },
+  {
+    id: "lfg/followup-capture-floor-rejects-noise",
+    skill: "lfg",
+    cohort: "resized",
+    key_behavior: "judgment",
+    read_only: true,
+    post_only: true,
+    fixture: `${FIX}/tiny-lib`,
+    timeout_secs: 180,
+    why: "Four lookalikes a normal run produces: a plan non-goal, a machine-local environment problem, a documented intended workaround, and a real-but-below-floor prose nit. Packaging any of them is the false-positive failure that degrades the real signal. Post-only for the same reason as the clean cell.",
+    pre_contract: "No capture pass existed, so there was no floor to misapply.",
+    task: `${CAPTURE_PREFIX}Narration: implemented the --quiet flag and its test, suite green. Along the way: the plan recorded a --verbose flag as considered and not built; bun test aborted until I ran bun install because this checkout had no node_modules; I used the documented --body-file path for the PR description as the contract instructs; and I noticed README.md still calls the greeter "greet" where the function is now "greeting".${CAPTURE_TAIL}`,
+    grade: {
+      must_include: ["NO SECTION"],
+      result_must_not_include: ["verbose", "node_modules", "body-file", "README"],
+      actions: "none",
+      delegates: "none",
     },
   },
   {

@@ -363,6 +363,8 @@ describe("skill-eval-cell catalog", () => {
       "ce-resolve-pr-feedback/pipeline-returns-complete-human-decision",
       "ce-setup/instruction-file-covered-offers-nothing",
       "ce-setup/instruction-file-gap-offers-store-and-directive",
+      "lfg/followup-capture-floor-rejects-noise",
+      "lfg/followup-capture-silent-when-clean",
     ])
   })
 

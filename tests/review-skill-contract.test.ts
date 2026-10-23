@@ -1380,6 +1380,33 @@ describe("ce-code-review contract", () => {
     expect(lfg).toMatch(/Never block DONE on tracker filing failures/i)
   })
 
+  // WOR-92 (2026-10-23): the close-out's follow-up capture writes a second
+  // PR-body section. It must stay outside the residual contract above: that
+  // heading is shared by five files and ce-resolve-pr-feedback ticks its
+  // bullets, so folding discoveries into it would put items that this PR cannot
+  // close under a checkbox the resolver manages.
+  test("the follow-up capture section stays outside the residual heading contract", async () => {
+    const captureHeading = "## Follow-ups discovered in this run"
+    const residualHeading = "## Unapplied review findings"
+    for (const path of [
+      "skills/lfg/references/review-followup.md",
+      "skills/ce-work/references/shipping-workflow.md",
+      "skills/ce-debug/references/post-fix-handoff.md",
+      "skills/ce-resolve-pr-feedback/SKILL.md",
+      "skills/ce-resolve-pr-feedback/references/pipeline-mode.md",
+    ]) {
+      expect(
+        await readRepoFile(path),
+        `${path} writes the residual checklist and must not claim the capture heading`,
+      ).not.toContain(captureHeading)
+    }
+    // The close-out owns the capture heading and names the residual one it must
+    // preserve when it rewrites the description.
+    const closeOut = await readRepoFile("skills/lfg/references/shipping.md")
+    expect(closeOut).toContain(captureHeading)
+    expect(closeOut).toContain(residualHeading)
+  })
+
   test("every writer of the PR-body residual checklist uses the heading ce-resolve-pr-feedback ticks", async () => {
     // The heading is a cross-skill contract: lfg, ce-work, and ce-debug write it into
     // the PR body; ce-resolve-pr-feedback finds it by name to tick bullets its fixes close.

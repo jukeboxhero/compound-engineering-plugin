@@ -245,3 +245,81 @@ describe("inline child returns do not end the caller's turn", () => {
     expect(taskVisibility).toMatch(/Its return ends the child, not the run: after writing or reading it, continue with the next numbered step in the same turn/)
   })
 })
+
+// WOR-92 (2026-10-23): lfg's close-out gained a pass that reviews the finished
+// run for out-of-scope discoveries and packages each one. Three things about it
+// are load-bearing and each is pinned below.
+//
+// Placement: the pass lives in the close-out, not in a numbered step. The body
+// has 24 bytes of headroom under the ratchet in codex-skill-prompt-budget, so a
+// numbered step cannot be added; the close-out is also the only point that sees
+// the browser-test and CI-watching steps, where "broken tooling it worked
+// around" actually surfaces. The slice pin fails if the block drifts out of the
+// close-out, and the ordering pin is an index comparison so renumbering lfg's
+// steps does not break it.
+//
+// The condition is an obligation, never a count. "Skip when none of the N
+// exists" lets an agent satisfy the rule from the observable zeroes and never
+// perform the judgment -- there is no enumerable trigger set here to count.
+// Step 6 is the deliberate contrast: its count is pinned in
+// unified-plan-artifact-contract because its triggers are finite and named.
+//
+// Scope: the pass detects and packages only. A sibling ticket owns classifying
+// and filing, so a tracker, queue, or issue-creation instruction appearing in
+// this block is a scope regression.
+describe("lfg out-of-scope follow-up capture", () => {
+  const CLOSE_OUT_START = "## Step 11 — close out"
+  const closeOut = shippingTail.slice(shippingTail.indexOf(CLOSE_OUT_START))
+  const capture = closeOut.slice(closeOut.indexOf("### Follow-ups the run discovered"))
+
+  test("the capture pass lives in the close-out and is reached before the DONE promise", () => {
+    expect(shippingTail.indexOf(CLOSE_OUT_START)).toBeGreaterThan(-1)
+    expect(closeOut).toContain("### Follow-ups the run discovered")
+
+    const captureAt = closeOut.indexOf("### Follow-ups the run discovered")
+    const donePromise = closeOut.indexOf("Then output the DONE promise.")
+    expect(captureAt).toBeGreaterThan(-1)
+    expect(donePromise).toBeGreaterThan(captureAt)
+  })
+
+  test("the capture condition is an obligation, not a count over a trigger set", () => {
+    expect(capture).toMatch(/Performing this review is unconditional/)
+    // Silence is stated as all three omissions; dropping any one of them is how
+    // a placeholder creeps back into every run.
+    expect(capture).toMatch(/no section, no placeholder, and no "none found" line/)
+    // A count here is the regression: observable zeroes plus one unexamined
+    // judgment reads as a legitimate skip.
+    expect(capture).not.toMatch(/none of the (?:two|three|four|five|N) exists?/i)
+  })
+
+  test("each packaged discovery carries the three things a later reader needs", () => {
+    for (const element of ["description", "origin anchor", "code pointers"]) {
+      expect(capture, `the package must name ${element}`).toContain(element)
+    }
+    // The ticket anchor is absent on the plan route, so the order degrades.
+    expect(capture).toMatch(/issue of record[\s\S]{0,400}PR URL[\s\S]{0,400}branch and head SHA/)
+  })
+
+  test("the capture pass detects and packages only -- it never routes or files", () => {
+    expect(capture).toMatch(/neither classifies[\s\S]{0,160}nor files/)
+    expect(capture).not.toMatch(/tracker-defer/)
+    expect(capture).not.toMatch(/gh issue create/)
+    expect(capture).not.toMatch(/intake queue/)
+  })
+
+  test("the record keeps its own heading and preserves the review-residual section", () => {
+    expect(capture).toContain("## Follow-ups discovered in this run")
+    expect(capture).toContain("## Unapplied review findings")
+    // Step 9's description-update sentence covers only a pre-existing PR, so the
+    // close-out states its own invocation; and that mode recomposes the whole
+    // body, which would otherwise reopen a finding ticked closed at step 10.
+    expect(capture).toMatch(/description-update mode/)
+    expect(capture).toMatch(/current body/)
+  })
+
+  test("an observation made earlier in the run is noted when it occurs", () => {
+    // The capture pass first states itself at step 9, so nothing would preserve
+    // a step-3 observation for it without this.
+    expect(reviewFollowup).toMatch(/note it in your narration as it occurs/)
+  })
+})
