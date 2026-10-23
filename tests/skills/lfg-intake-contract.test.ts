@@ -268,17 +268,23 @@ describe("inline child returns do not end the caller's turn", () => {
 // and filing, so a tracker, queue, or issue-creation instruction appearing in
 // this block is a scope regression.
 describe("lfg out-of-scope follow-up capture", () => {
-  const CLOSE_OUT_START = "## Step 11 — close out"
-  const closeOut = shippingTail.slice(shippingTail.indexOf(CLOSE_OUT_START))
-  const capture = closeOut.slice(closeOut.indexOf("### Follow-ups the run discovered"))
+  // Anchored on the step pattern, not the literal number, and bounded at the next
+  // subsection: an unanchored slice() on a missing index returns the file's last
+  // character, which would make the negative pins below pass vacuously.
+  const CAPTURE_HEADING = "### Follow-ups the run discovered"
+  const closeOutAt = shippingTail.search(/^## Step \d+ — close out$/m)
+  const closeOut = closeOutAt > -1 ? shippingTail.slice(closeOutAt) : ""
+  const captureAt = closeOut.indexOf(CAPTURE_HEADING)
+  const captureEnd = closeOut.indexOf("\n### ", captureAt + CAPTURE_HEADING.length)
+  const capture =
+    captureAt > -1 ? closeOut.slice(captureAt, captureEnd > -1 ? captureEnd : undefined) : ""
 
   test("the capture pass lives in the close-out and is reached before the DONE promise", () => {
-    expect(shippingTail.indexOf(CLOSE_OUT_START)).toBeGreaterThan(-1)
-    expect(closeOut).toContain("### Follow-ups the run discovered")
+    expect(closeOutAt, "shipping.md must carry a `## Step <n> — close out` heading").toBeGreaterThan(-1)
+    expect(captureAt, "the capture pass must live inside the close-out").toBeGreaterThan(-1)
+    expect(capture.length, "the capture slice must not collapse to nothing").toBeGreaterThan(200)
 
-    const captureAt = closeOut.indexOf("### Follow-ups the run discovered")
     const donePromise = closeOut.indexOf("Then output the DONE promise.")
-    expect(captureAt).toBeGreaterThan(-1)
     expect(donePromise).toBeGreaterThan(captureAt)
   })
 
