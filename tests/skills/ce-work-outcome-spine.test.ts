@@ -352,6 +352,8 @@ describe("ce-work cross-model engine contract", () => {
 
     expect(worker).toContain("caller, unit packet, and controller own dispatch")
     expect(worker).toContain("Implement exactly the supplied implementation unit")
+    expect(worker).toMatch(/Inspect another checkout only to read.*prototype.*explicitly cited in the unit packet/)
+    expect(worker).toContain("Never mutate another checkout")
     expect(worker).toContain("Before returning `completed`")
     expect(worker).toContain("complete Git delta")
     expect(worker).toContain("disposable artifacts created by your own checks")
@@ -364,6 +366,16 @@ describe("ce-work cross-model engine contract", () => {
     for (const dispatchPolicy of ["recipient", "model", "harness", "intermediary", "retry", "route", "additional workers"]) {
       expect(worker.toLowerCase()).not.toContain(dispatchPolicy)
     }
+  })
+
+  test("tells every implementation writer to keep plan IDs out of the files it writes", async () => {
+    const loop = await readRepoFile("skills/ce-work/references/implementation-loop.md")
+    const strategy = await readRepoFile("skills/ce-work/references/execution-strategy.md")
+    const worker = await readRepoFile("skills/ce-work/references/agents/implementation-worker.md")
+
+    expect(loop).toMatch(/\*\*Plan IDs stay out of written files\.\*\*[^\n]*Keep them out of the files the work writes/)
+    expect(strategy).toMatch(/\*\*Plan IDs stay out of written files\*\* rules? from `references\/implementation-loop\.md`, verbatim/)
+    expect(worker).toContain("Keep them out of the files you write")
   })
 
   test("distinguishes Cursor from Composer and collapses same-host default execution", async () => {

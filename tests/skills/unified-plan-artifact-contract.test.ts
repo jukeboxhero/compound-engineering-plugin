@@ -363,9 +363,9 @@ describe("unified plan artifact contract", () => {
     expect(carrier).toMatch(/disable-model-invocation.*headless run, never ask/is)
     expect(carrier).toContain("default path is mandatory")
 
-    // Step 1 threads the plan_model carrier to ce-plan beside the sanitized request;
-    // the body names the carrier at the seam and the reference owns its exact form.
-    expect(sliceSection(lfg, "1. **Produce the work source**", "2. **Read `references/work-return.md` first**")).toContain(
+    // Route 6 in intake.md threads the plan_model carrier to ce-plan beside the sanitized
+    // request; stage-routing.md owns its exact form.
+    expect(readFileSync(path.join(process.cwd(), "skills/lfg/references/intake.md"), "utf8")).toContain(
       "`plan_model:<alias>` carrier",
     )
     const step1 = carrier
@@ -871,6 +871,15 @@ describe("cross-layer ownership contract", () => {
 })
 
 describe("Product Contract section catalog and routing destinations", () => {
+  test("relevant prototype sources reach both native and external unit packets", () => {
+    const native = readRepoFile("skills/ce-work/references/execution-strategy.md")
+    const packetContract = "Include the active unit's prototype source citations with their qualifications about locality, availability, and the authority of requirements. Instruct the worker to inspect accessible, explicitly cited prototype decisions and selected screens or states before implementing the affected behavior, including when those sources are in another worktree. Keep edits and tests inside the assigned workspace."
+    expect(native).toContain(packetContract)
+    expect(crossModelExecution).toContain(packetContract)
+    expect(readRepoFile("skills/ce-plan/references/output-mode.md")).toContain(
+      "**Repository file references inside the plan are repo-relative**",
+    )
+  })
   // ce-plan's include-when-material catalog specified only implementation-facing
   // sections; its product-shape sections had no firing/skip rule at all. Measured
   // 2026-08-12 across 34 pre-existing unified plans: Success Criteria appeared in

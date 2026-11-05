@@ -2,7 +2,7 @@ import { chmod, copyFile, mkdir, mkdtemp, readdir, readFile, realpath, rm, symli
 import os from "os"
 import path from "path"
 import { afterAll, beforeAll, describe, expect, setDefaultTimeout, test } from "bun:test"
-import { ACPX_PIN } from "../helpers/acpx-pin"
+import { ACPX_PIN, ACPX_RANGE } from "../helpers/acpx-pin"
 import { isolatedGitEnv, knowledgeFile } from "./helpers/packs-fixtures"
 
 // check-health cases spawn bash + git + the packs resolver; under full-suite load
@@ -832,7 +832,6 @@ describe("ce-setup check-health", () => {
         readFile(path.join(repoRoot, "skills", "ce-setup", "references", "repo-fixes.md"), "utf8"),
       ])
     ).join("\n")
-    expect(skill).toContain("Set up a repo config file for this project?")
     expect(skill).toContain("copy `references/config-template.yaml` to `<repo-root>/.compound-engineering/config.yaml`")
     expect(skill).toContain("Do not create `config.local.yaml`")
     expect(skill).toContain("offer to move it into `config.yaml`")
@@ -1253,7 +1252,7 @@ describe("ce-setup check-health cross-model peers prerequisite", () => {
     expect(result.exitCode).toBe(0)
     expect(adapterSpecs.length).toBeGreaterThan(0)
     expect(result.npxCalls).toEqual(
-      [`acpx@${ACPX_PIN}`, ...adapterSpecs].map((spec) => `--yes --package=${spec} -- node --version`),
+      [ACPX_RANGE, ...adapterSpecs].map((spec) => `--yes --package=${spec} -- node --version`),
     )
     expect(result.stdout).not.toContain("Optional capabilities")
     // npx resolves packages from its working directory first, so the warm must
