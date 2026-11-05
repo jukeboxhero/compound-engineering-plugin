@@ -321,6 +321,8 @@ describe("skill-eval-cell catalog", () => {
         "ce-doc-review/antigravity-last-automatic-target:references/cross-model-review.md",
         "ce-pov/oracle-default-order-reaches-antigravity:references/cross-model-panel.md",
         "ce-work/antigravity-default-candidates:references/cross-model-execution.md",
+        "lfg/followup-capture-floor-rejects-noise:references/shipping.md",
+        "lfg/followup-capture-silent-when-clean:references/shipping.md",
         "lfg/plan-first:references/plan-brief.md",
       ].sort(),
     )
@@ -510,6 +512,9 @@ describe("skill-eval-cell catalog", () => {
       "ce-setup/instruction-file-gap-offers-store-and-directive",
       "ce-sweep/closed-at-source-reconciles",
       "lfg/defect-route-ships-session-edits",
+      "lfg/followup-capture-floor-rejects-noise",
+      "lfg/followup-capture-preserves-earlier-run",
+      "lfg/followup-capture-silent-when-clean",
       "lfg/one-pass-skips-plan",
       "lfg/unsettled-values-still-plan",
     ])

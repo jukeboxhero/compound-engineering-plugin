@@ -84,7 +84,8 @@ Without an explicit pipeline, autonomous runs skip planning, treat review as opt
 7. `/ce-test-browser` runs in pipeline mode.
 8. `/ce-commit-push-pr mode:pipeline branding:on` commits remaining changes, pushes, opens a PR when a remote exists, and marks CE provenance. On the defect route the PR body carries the root cause and links the ticket. If the project's instructions name their own shipping process (say, a `/create-pr` skill), that process runs instead, so CE branding may not appear.
 9. `/ce-babysit-pr mode:pipeline` watches the open PR: CI repairs via `/ce-debug`, incoming review comments via `/ce-resolve-pr-feedback`, up to three fix rounds by default. Pipeline babysit stops at "CI decided," not "merged."
-10. Print `DONE`. If the plan named a larger body of separately planned work and an area is still unplanned, `lfg` may offer an opt-in `/ce-handoff` for a fresh session. It does not continue that area itself.
+10. Review the finished run for out-of-scope discoveries — a defect or gap it observed but did not change, like a broken script it worked around or a design pass it skipped — and package each one with a short description, an origin anchor linking back to where it came from — whichever the run has, preferring the ticket, then the PR, the review run, the branch and commit, or the plan — and code pointers. They go into the PR body under their own heading for whoever reviews it, or into the report when there is no PR. `lfg` only detects and packages: it files nothing. A run that noticed nothing out of scope shows nothing here.
+11. Print `DONE`. If the plan named a larger body of separately planned work and an area is still unplanned, `lfg` may offer an opt-in `/ce-handoff` for a fresh session. It does not continue that area itself.
 
 An invalidating settlement conflict from planning or review stops the pipeline before shipping. Non-halting flagged conflicts become residuals that reach the PR's settled-decisions line.
 

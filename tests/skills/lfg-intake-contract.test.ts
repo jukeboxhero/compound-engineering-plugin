@@ -260,3 +260,125 @@ describe("inline child returns do not end the caller's turn", () => {
     expect(taskVisibility).toMatch(/Its return ends the child, not the run: after writing or reading it, continue with the next numbered step in the same turn/)
   })
 })
+
+// WOR-92 (2026-10-23): lfg's close-out gained a pass that reviews the finished
+// run for out-of-scope discoveries and packages each one. Three things about it
+// are load-bearing and each is pinned below.
+//
+// Placement: the pass lives in the close-out, not in a numbered step. The body
+// has 24 bytes of headroom under the ratchet in codex-skill-prompt-budget, so a
+// numbered step cannot be added; the close-out is also the only point that sees
+// the browser-test and CI-watching steps, where "broken tooling it worked
+// around" actually surfaces. The slice pin fails if the block drifts out of the
+// close-out, and the ordering pin is an index comparison so renumbering lfg's
+// steps does not break it.
+//
+// The condition is an obligation, never a count. "Skip when none of the N
+// exists" lets an agent satisfy the rule from the observable zeroes and never
+// perform the judgment -- there is no enumerable trigger set here to count.
+// Step 6 is the deliberate contrast: its count is pinned in
+// unified-plan-artifact-contract because its triggers are finite and named.
+//
+// Scope: the pass detects and packages only. A sibling ticket owns classifying
+// and filing, so a tracker, queue, or issue-creation instruction appearing in
+// this block is a scope regression.
+describe("lfg out-of-scope follow-up capture", () => {
+  // Anchored on the step pattern, not the literal number, and bounded at the next
+  // subsection: an unanchored slice() on a missing index returns the file's last
+  // character, which would make the negative pins below pass vacuously.
+  const CAPTURE_HEADING = "### Follow-ups the run discovered"
+  const closeOutAt = shippingTail.search(/^## Step \d+ — close out$/m)
+  const closeOut = closeOutAt > -1 ? shippingTail.slice(closeOutAt) : ""
+  const captureAt = closeOut.indexOf(CAPTURE_HEADING)
+  const captureEnd = closeOut.indexOf("\n### ", captureAt + CAPTURE_HEADING.length)
+  const capture =
+    captureAt > -1 ? closeOut.slice(captureAt, captureEnd > -1 ? captureEnd : undefined) : ""
+
+  test("the capture pass lives in the close-out and is reached before the DONE promise", () => {
+    expect(closeOutAt, "shipping.md must carry a `## Step <n> — close out` heading").toBeGreaterThan(-1)
+    expect(captureAt, "the capture pass must live inside the close-out").toBeGreaterThan(-1)
+    expect(capture.length, "the capture slice must not collapse to nothing").toBeGreaterThan(200)
+
+    const donePromise = closeOut.indexOf("Then output the DONE promise.")
+    expect(donePromise).toBeGreaterThan(captureAt)
+  })
+
+  test("the capture condition is an obligation, not a count over a trigger set", () => {
+    expect(capture).toMatch(/Performing this review is unconditional/)
+    // Silence is stated as all three omissions; dropping any one of them is how
+    // a placeholder creeps back into every run.
+    expect(capture).toMatch(/no section, no placeholder, and no "none found" line/)
+    // A count here is the regression: observable zeroes plus one unexamined
+    // judgment reads as a legitimate skip.
+    expect(capture).not.toMatch(/none of the (?:two|three|four|five|N) exists?/i)
+  })
+
+  test("each packaged discovery carries the three things a later reader needs", () => {
+    // Bolded forms, not the bare words: "description" also occurs in this slice as
+    // "description-update mode", so the bare-word pin could not fail when the
+    // package bullets were removed (WOR-92 review finding, anchor 100).
+    for (const element of ["**description**", "**origin anchor**", "**code pointers**"]) {
+      expect(capture, `the package must name ${element}`).toContain(element)
+    }
+    // The ticket anchor is absent on the plan route, so the order degrades.
+    expect(capture).toMatch(/issue of record[\s\S]{0,400}PR URL[\s\S]{0,400}branch and head SHA/)
+  })
+
+  test("the capture pass detects and packages only -- it never routes or files", () => {
+    expect(capture).toMatch(/neither classifies[\s\S]{0,160}nor files/)
+    expect(capture).not.toMatch(/tracker-defer/)
+    expect(capture).not.toMatch(/gh issue create/)
+    expect(capture).not.toMatch(/intake queue/)
+  })
+
+  test("the record keeps its own heading and preserves the review-residual section", () => {
+    expect(capture).toContain("## Follow-ups discovered in this run")
+    expect(capture).toContain("## Unapplied review findings")
+    // Step 9's description-update sentence covers only a pre-existing PR, so the
+    // close-out states its own invocation; and that mode recomposes the whole
+    // body, which would otherwise reopen a finding ticked closed at step 10.
+    expect(capture).toMatch(/description-update mode/)
+    expect(capture).toMatch(/current body/)
+    // The carry-forward is stated as a condition over everything the recompose
+    // drops, not as a list of what this run produced. Round 1 glossed it into
+    // such a list and every item was a this-run artifact, so a second run
+    // silently erased the first run's discoveries; these two pin the property
+    // and the merge direction that replaced the list.
+    expect(capture).toMatch(/whether or not this run produced it/)
+    expect(capture).toMatch(/an earlier run left[\s\S]{0,120}rather than replace/)
+  })
+
+  test("an observation made earlier in the run is noted when it occurs", () => {
+    // The capture pass first states itself at step 9, so nothing would preserve
+    // a step-3 observation for it without this.
+    expect(reviewFollowup).toMatch(/note it in your narration as it occurs/)
+  })
+
+  // WOR-92 (2026-11-05): step 9 carried its own copy of the carry-forward rule
+  // and it had already drifted -- it named only the capture heading and stated no
+  // failure direction, while the owning statement one screen down names both
+  // at-risk sections and gates the edit on the body read. Nothing caught the
+  // drift because the pins above slice downward from the close-out heading and
+  // step 9 sits above that slice, so the more common path (a PR that already
+  // existed) was the unpinned one. The rule now has one owner and step 9 points
+  // at it, per root CODING_STANDARDS.md "One contract, one owner": a paraphrase
+  // sitting next to its owner drifts apart from it.
+  test("step 9's description-update invocation defers to the close-out's carry-forward rule", () => {
+    const stepNineAt = shippingTail.search(/^## Step \d+ — what LFG passes into the default$/m)
+    expect(stepNineAt, "shipping.md must carry a step-9 default-handoff heading").toBeGreaterThan(-1)
+    const stepTenAt = shippingTail.search(/^## Step \d+ — stack handoff from step \d+$/m)
+    expect(stepTenAt, "shipping.md must carry a step-10 heading after step 9").toBeGreaterThan(stepNineAt)
+    const stepNine = shippingTail.slice(stepNineAt, stepTenAt)
+
+    expect(stepNine, "step 9 must point at the carry-forward rule by name").toContain(
+      "Follow-ups the run discovered",
+    )
+    expect(stepNine, "the pointer must say the rule binds every description-update invocation").toMatch(
+      /governs every description-update invocation/,
+    )
+    // The regression this replaces: step 9 restating the rule itself. Its own
+    // copy said "pass its live `## Follow-ups discovered in this run` section
+    // through unchanged" -- one section, no failure direction.
+    expect(stepNine, "step 9 must not restate the carry-forward rule").not.toMatch(/through unchanged/)
+  })
+})

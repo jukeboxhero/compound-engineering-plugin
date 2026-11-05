@@ -48,6 +48,8 @@ const ANNOTATION_WAIT_BASE_REF = "d1734f7ed5341b6d0b683405da82895f0a0a25f7"
 /** main before streak interpretation accounted for estimated baselines and candidate selection (#1698). */
 const RETUNE_STREAK_BASE_REF = "53af1a2eab6415be9881c1987dbc986dcb54465c"
 export const SUSTAINED_HANDOFF_BASE_REF = "153e605e1622154a0d7da095fceed13edcb68bf7"
+/** main before the close-out reviewed the finished run for out-of-scope discoveries (WOR-92). */
+export const FOLLOWUP_CAPTURE_BASE_REF = "f78f006b53b2c734cb85446e2c8656fd26113f55"
 export const LFG_ONE_PASS_BASE_REF = "6035b2519123fdcaabd609a757852a0aabc06be3"
 export const HOST_WAKE_BASE_REF = "fad10065909cd195723fc8996600fb80086b8c2c"
 /** main before judgment-bound escalations were adjudicated through ce-pov instead of parking as needs-human. */
@@ -222,6 +224,16 @@ const UNDERSTANDING_BASE_REF = "8df67793b9733d2220fa9a7fc37139931471af62"
 const BEHAVIOR_TRACE_BASE_REF = "c152896f1cda13548fc1a05b2aff88caf8ae8dba"
 
 const FIX = "tests/skill-eval-cell/fixtures"
+
+/**
+ * Shared framing for the close-out follow-up-capture cells (WOR-92). The probe asks
+ * for the section text because the PR-body section is the observable; `NO SECTION` is
+ * how the probe encodes "write nothing", not a placeholder the skill would ever emit.
+ */
+const CAPTURE_PREFIX =
+  "Use lfg for this checkpoint: the run is at step 11's close-out. A PR is open. Resolve only the follow-up capture for the finished run, from the narration below. "
+const CAPTURE_TAIL =
+  " Return between the markers RESULT-START and RESULT-END exactly the PR-body section you would add, or the single line NO SECTION if you would add none. Then stop. Do not invoke any skills, dispatch, edit files, or run tests."
 /** main before #1947 brought declared Compound Packs into ce-work, ce-debug, and the lite and focused review paths. */
 const PACKS_EXECUTION_BASE_REF = "248883d86c423aa6e086e4811d709effc0f1d9ad"
 const LITE_PACK_PROBE_TASK = `Use the ce-code-review skill on this repo with mode:agent. Resolve the Review depth gate and run the selected path's own in-context checks. This is a probe: do not create the run directory, do not dispatch reviewers, and do not edit any file.
@@ -6169,6 +6181,106 @@ Use "Correct widget limit" as the description in the subject and any required bo
     },
   },
   {
+    id: "lfg/followup-capture-packages-discovery",
+    baseline_ref: FOLLOWUP_CAPTURE_BASE_REF,
+    skill: "lfg",
+    cohort: "resized",
+    key_behavior: "judgment",
+    read_only: true,
+    fixture: `${FIX}/tiny-lib`,
+    timeout_secs: 180,
+    why: "The close-out must package a defect the run observed in tooling it did not change. The probe asks for the section text because the artifact is the observable; NO SECTION is how the probe encodes silence, not a placeholder the skill would ever write.",
+    pre_contract: "The close-out echoed new concepts and the open PR, and reviewed nothing for out-of-scope discoveries.",
+    task: `${CAPTURE_PREFIX}Narration: implemented the --quiet flag and its test; while running the suite I found scripts/check-fixtures.sh exits 1 on every clean checkout because it globs a directory that no longer exists, so I bypassed it and ran bun test directly; the flag work itself is complete and green.${CAPTURE_TAIL}`,
+    grade: {
+      result_must_include: ["Follow-ups discovered in this run", "check-fixtures"],
+      actions: "none",
+      delegates: "none",
+    },
+  },
+  {
+    id: "lfg/followup-capture-silent-when-clean",
+    skill: "lfg",
+    cohort: "resized",
+    key_behavior: "judgment",
+    read_only: true,
+    post_only: true,
+    fixture: `${FIX}/tiny-lib`,
+    timeout_secs: 180,
+    why: "Guards the other direction: a run that surfaced nothing writes no section. The read probe is what separates a performed-and-empty review from one that never happened, since both answer NO SECTION. Post-only because a tree with no capture prose cannot over-fire, so this arm can only fail after the change.",
+    pre_contract: "No capture pass existed, so there was nothing to over-fire.",
+    task: `${CAPTURE_PREFIX}Narration: implemented the --quiet flag, added its test, ran the suite green, and committed. Nothing else came up.${CAPTURE_TAIL}`,
+    grade: {
+      files_read_post: ["references/shipping.md"],
+      result_must_include: ["NO SECTION"],
+      result_must_not_include: ["Follow-ups discovered in this run"],
+      actions: "none",
+      delegates: "none",
+    },
+  },
+  {
+    id: "lfg/followup-capture-floor-rejects-noise",
+    skill: "lfg",
+    cohort: "resized",
+    key_behavior: "judgment",
+    read_only: true,
+    post_only: true,
+    fixture: `${FIX}/tiny-lib`,
+    timeout_secs: 180,
+    why: "Four lookalikes a normal run produces: a plan non-goal, a machine-local problem another person would not hit, a documented intended workaround, and a purely cosmetic preference the run voiced about code the fixture really contains. Packaging any of them is the false-positive failure that degrades the real signal. The cosmetic item is what grades the floor itself, since the other three are named exclusions a run could drop by matching the list without ever judging materiality. It must be an item the fixture carries, so the answer turns on the floor rather than on the item being unverifiable; and it must cost another person nothing, which is why it is not the fixture's missing scripts block — absent run and test commands are tooling the next person would also have to work around, which the floor's own clearing case names, so that item is above the floor and a correct agent packages it. Post-only for the same reason as the clean cell.",
+    pre_contract: "No capture pass existed, so there was no floor to misapply.",
+    task: `${CAPTURE_PREFIX}Narration: implemented the --quiet flag and its test, suite green. Along the way: the plan recorded a --verbose flag as considered and not built; a stale local cache under my own home directory made the first run fail until I cleared it; I used the documented --body-file path for the PR description as the contract instructs; and greet.js builds its return with a template literal where plain concatenation would read the same, which is not how I would have written it though nothing about it is wrong.${CAPTURE_TAIL}`,
+    grade: {
+      files_read_post: ["references/shipping.md"],
+      result_must_include: ["NO SECTION"],
+      result_must_not_include: [
+        "Follow-ups discovered in this run",
+        "verbose",
+        "stale local cache",
+        "body-file",
+        "template literal",
+      ],
+      actions: "none",
+      delegates: "none",
+    },
+  },
+  {
+    id: "lfg/followup-capture-preserves-earlier-run",
+    skill: "lfg",
+    cohort: "resized",
+    key_behavior: "judgment",
+    read_only: true,
+    post_only: true,
+    fixture: `${FIX}/tiny-lib`,
+    timeout_secs: 180,
+    why: "The close-out recomposes the whole PR body, so anything already on it that the recompose does not preserve is lost, and a second run must not erase the first run's discoveries -- the one record the pass exists to create. The probe withholds the body text on purpose: pasting it in lets a model copy what is in front of it and pass without ever deciding the earlier section is its to keep, which is the decision the prose owns, so the grade is the declared carry-forward set. Post-only after measurement, not by construction: run against the prose that first shipped this pass -- whose step-11 carry-forward listed only this-run artifacts -- Claude still named the earlier section and merged into it, because the same invariant also sits in step 9 one screen up and a strong model reconciles the two. That tie is no regression rather than improvement, so the pre/post delta for this condition is carried by the mechanical pin in tests/skills/lfg-intake-contract.test.ts, which does go red on that prose; this cell guards the post-change behavior against regression.",
+    pre_contract: "Step 11 carried forward the plan path, this run's settled-decision conflicts, and the review-residual section -- every item an artifact of the current run.",
+    task: `Use lfg for this checkpoint: the run is at step 11's close-out. A PR is open on this branch, and an earlier lfg run already updated its description. This run found one discovery of its own: this package has no convention for how a command formats its output, so the --quiet flag added to src/greet.js got a shape invented for it and the wider question was left undesigned. You are about to recompose the PR description. Return between the markers RESULT-START and RESULT-END a list of every part of the PR's current body you will carry forward into the recomposed description, naming each one, and nothing else. Then stop. Do not invoke any skills, dispatch, edit files, or run tests.`,
+    grade: {
+      result_must_include: ["Follow-ups discovered in this run", "Unapplied review findings"],
+      actions: "none",
+      delegates: "none",
+    },
+  },
+  {
+    id: "lfg/followup-capture-packages-design-gap",
+    baseline_ref: FOLLOWUP_CAPTURE_BASE_REF,
+    skill: "lfg",
+    cohort: "resized",
+    key_behavior: "judgment",
+    read_only: true,
+    fixture: `${FIX}/tiny-lib`,
+    timeout_secs: 180,
+    why: "A discovery whose subject is product design rather than code or tooling (WOR-92). The ticket asks for missing design by name and the Objective promises a design gap the run skipped, so a condition keyed on code and tooling drops that whole class while still passing the tooling cell — which is the case the block's subordinated example already names. Grades on the code pointer because that is the package element a design-shaped entry is likeliest to omit.",
+    pre_contract: "The close-out reviewed nothing for out-of-scope discoveries, so no class was reachable.",
+    task: `${CAPTURE_PREFIX}Narration: added the --quiet flag to src/greet.js and its test, suite green. The flag has to print a one-line summary and this package has no convention for how any command formats its output, so I invented a shape for this one flag and left the wider question undesigned; the next person adding a flag there faces the same choice with nothing to follow.${CAPTURE_TAIL}`,
+    grade: {
+      result_must_include: ["Follow-ups discovered in this run", "greet.js"],
+      actions: "none",
+      delegates: "none",
+    },
+  },
+  {
     id: "ce-test-xcode/missing-mcp-stops",
     skill: "ce-test-xcode",
     cohort: "resized",
@@ -6863,6 +6975,13 @@ export function scenariosMatching(opts: {
 export function scenarioHasDecisionGrade(s: Scenario): boolean {
   const g = s.grade
   if (g.must_include?.length || g.must_include_any?.length || g.must_exclude?.length) return true
+  // WOR-92 (2026-11-05): the RESULT-block needles grade a decision more strictly
+  // than must_include, which scores against the whole of stdout -- they read only
+  // the answer the cell asked the run to declare, and grade.ts fails the host when
+  // that block is missing, so neither can pass vacuously. They were added after
+  // this guard and every cell using them also carried must_include or
+  // workspace_read, so a cell graded solely on its RESULT block read as ungraded.
+  if (g.result_must_include?.length || g.result_must_not_include?.length) return true
   if (g.declared && Object.keys(g.declared).length) return true
   if (g.delegates_must_not_include?.length) return true
   if (g.must_include_field && g.field_must_not_include?.length) return true

@@ -7,6 +7,20 @@ async function readRepoFile(relativePath: string): Promise<string> {
   return readFile(path.join(process.cwd(), relativePath), "utf8")
 }
 
+/**
+ * Every file that writes the `## Unapplied review findings` checklist into a PR
+ * body. Shared by the two tests below so a sixth writer is added in one place:
+ * one asserts each of them carries that heading, the other asserts none of them
+ * claims the close-out's separate follow-up heading.
+ */
+const PR_BODY_RESIDUAL_WRITERS = [
+  "skills/lfg/references/review-followup.md",
+  "skills/ce-work/references/shipping-workflow.md",
+  "skills/ce-debug/references/post-fix-handoff.md",
+  "skills/ce-resolve-pr-feedback/SKILL.md",
+  "skills/ce-resolve-pr-feedback/references/pipeline-mode.md",
+] as const
+
 const STRICT_SCHEMA_KEYWORDS = new Set([
   "$comment",
   "$id",
@@ -1398,18 +1412,42 @@ describe("ce-code-review contract", () => {
     expect(lfg).toMatch(/Never block DONE on tracker filing failures/i)
   })
 
+  // WOR-92 (2026-10-23): the close-out's follow-up capture writes a second
+  // PR-body section. It must stay outside the residual contract above: that
+  // heading is shared by five files and ce-resolve-pr-feedback ticks its
+  // bullets, so folding discoveries into it would put items that this PR cannot
+  // close under a checkbox the resolver manages.
+  test("the follow-up capture section stays outside the residual heading contract", async () => {
+    const captureHeading = "## Follow-ups discovered in this run"
+    const residualHeading = "## Unapplied review findings"
+    const writerBodies = await Promise.all(PR_BODY_RESIDUAL_WRITERS.map(readRepoFile))
+    for (const [index, body] of writerBodies.entries()) {
+      expect(
+        body,
+        `${PR_BODY_RESIDUAL_WRITERS[index]} writes the residual checklist and must not claim the capture heading`,
+      ).not.toContain(captureHeading)
+    }
+    // The close-out owns the capture heading. The residual-heading assertion is
+    // scoped to the close-out section and to the pass-through sentence that owns
+    // the rule: shipping.md has named that heading since step 9 existed, so a
+    // whole-file toContain could never go red.
+    const shipping = await readRepoFile("skills/lfg/references/shipping.md")
+    const closeOutAt = shipping.search(/^## Step \d+ — close out$/m)
+    expect(closeOutAt, "shipping.md must carry a close-out heading").toBeGreaterThan(-1)
+    const closeOut = shipping.slice(closeOutAt)
+    expect(closeOut).toContain(captureHeading)
+    expect(closeOut).toMatch(
+      new RegExp(`live \`${residualHeading}\` section[\\s\\S]{0,80}through unchanged`),
+    )
+  })
+
   test("every writer of the PR-body residual checklist uses the heading ce-resolve-pr-feedback ticks", async () => {
     // The heading is a cross-skill contract: lfg, ce-work, and ce-debug write it into
     // the PR body; ce-resolve-pr-feedback finds it by name to tick bullets its fixes close.
     const heading = "## Unapplied review findings"
-    for (const path of [
-      "skills/lfg/references/review-followup.md",
-      "skills/ce-work/references/shipping-workflow.md",
-      "skills/ce-debug/references/post-fix-handoff.md",
-      "skills/ce-resolve-pr-feedback/SKILL.md",
-      "skills/ce-resolve-pr-feedback/references/pipeline-mode.md",
-    ]) {
-      expect(await readRepoFile(path)).toContain(heading)
+    const writerBodies = await Promise.all(PR_BODY_RESIDUAL_WRITERS.map(readRepoFile))
+    for (const [index, body] of writerBodies.entries()) {
+      expect(body, `${PR_BODY_RESIDUAL_WRITERS[index]} must carry the residual heading`).toContain(heading)
     }
     const resolver = await readRepoFile("skills/ce-resolve-pr-feedback/SKILL.md")
     expect(resolver).toMatch(/tick it to `- \[x\]`/)
