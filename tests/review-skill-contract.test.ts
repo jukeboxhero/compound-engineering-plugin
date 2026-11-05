@@ -1402,10 +1402,11 @@ describe("ce-code-review contract", () => {
   test("the follow-up capture section stays outside the residual heading contract", async () => {
     const captureHeading = "## Follow-ups discovered in this run"
     const residualHeading = "## Unapplied review findings"
-    for (const path of PR_BODY_RESIDUAL_WRITERS) {
+    const writerBodies = await Promise.all(PR_BODY_RESIDUAL_WRITERS.map(readRepoFile))
+    for (const [index, body] of writerBodies.entries()) {
       expect(
-        await readRepoFile(path),
-        `${path} writes the residual checklist and must not claim the capture heading`,
+        body,
+        `${PR_BODY_RESIDUAL_WRITERS[index]} writes the residual checklist and must not claim the capture heading`,
       ).not.toContain(captureHeading)
     }
     // The close-out owns the capture heading. The residual-heading assertion is
@@ -1426,8 +1427,9 @@ describe("ce-code-review contract", () => {
     // The heading is a cross-skill contract: lfg, ce-work, and ce-debug write it into
     // the PR body; ce-resolve-pr-feedback finds it by name to tick bullets its fixes close.
     const heading = "## Unapplied review findings"
-    for (const path of PR_BODY_RESIDUAL_WRITERS) {
-      expect(await readRepoFile(path)).toContain(heading)
+    const writerBodies = await Promise.all(PR_BODY_RESIDUAL_WRITERS.map(readRepoFile))
+    for (const [index, body] of writerBodies.entries()) {
+      expect(body, `${PR_BODY_RESIDUAL_WRITERS[index]} must carry the residual heading`).toContain(heading)
     }
     const resolver = await readRepoFile("skills/ce-resolve-pr-feedback/SKILL.md")
     expect(resolver).toMatch(/tick it to `- \[x\]`/)

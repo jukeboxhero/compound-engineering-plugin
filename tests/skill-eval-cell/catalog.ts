@@ -3517,7 +3517,6 @@ Use "Correct widget limit" as the description in the subject and any required bo
     pre_contract: "The close-out echoed new concepts and the open PR, and reviewed nothing for out-of-scope discoveries.",
     task: `${CAPTURE_PREFIX}Narration: implemented the --quiet flag and its test; while running the suite I found scripts/check-fixtures.sh exits 1 on every clean checkout because it globs a directory that no longer exists, so I bypassed it and ran bun test directly; the flag work itself is complete and green.${CAPTURE_TAIL}`,
     grade: {
-      must_include: ["Follow-ups discovered in this run"],
       result_must_include: ["Follow-ups discovered in this run", "check-fixtures"],
       actions: "none",
       delegates: "none",
@@ -3537,7 +3536,7 @@ Use "Correct widget limit" as the description in the subject and any required bo
     task: `${CAPTURE_PREFIX}Narration: implemented the --quiet flag, added its test, ran the suite green, and committed. Nothing else came up.${CAPTURE_TAIL}`,
     grade: {
       files_read_post: ["references/shipping.md"],
-      must_include: ["NO SECTION"],
+      result_must_include: ["NO SECTION"],
       result_must_not_include: ["Follow-ups discovered in this run"],
       actions: "none",
       delegates: "none",
@@ -3557,8 +3556,14 @@ Use "Correct widget limit" as the description in the subject and any required bo
     task: `${CAPTURE_PREFIX}Narration: implemented the --quiet flag and its test, suite green. Along the way: the plan recorded a --verbose flag as considered and not built; a stale local cache under my own home directory made the first run fail until I cleared it; I used the documented --body-file path for the PR description as the contract instructs; and greet.js builds its return with a template literal where plain concatenation would read the same, which is not how I would have written it though nothing about it is wrong.${CAPTURE_TAIL}`,
     grade: {
       files_read_post: ["references/shipping.md"],
-      must_include: ["NO SECTION"],
-      result_must_not_include: ["verbose", "stale local cache", "body-file", "template literal"],
+      result_must_include: ["NO SECTION"],
+      result_must_not_include: [
+        "Follow-ups discovered in this run",
+        "verbose",
+        "stale local cache",
+        "body-file",
+        "template literal",
+      ],
       actions: "none",
       delegates: "none",
     },
@@ -3576,7 +3581,6 @@ Use "Correct widget limit" as the description in the subject and any required bo
     pre_contract: "Step 11 carried forward the plan path, this run's settled-decision conflicts, and the review-residual section -- every item an artifact of the current run.",
     task: `Use lfg for this checkpoint: the run is at step 11's close-out. A PR is open on this branch, and an earlier lfg run already updated its description. This run found one discovery of its own: this package has no convention for how a command formats its output, so the --quiet flag added to src/greet.js got a shape invented for it and the wider question was left undesigned. You are about to recompose the PR description. Return between the markers RESULT-START and RESULT-END a list of every part of the PR's current body you will carry forward into the recomposed description, naming each one, and nothing else. Then stop. Do not invoke any skills, dispatch, edit files, or run tests.`,
     grade: {
-      must_include: ["Follow-ups discovered in this run"],
       result_must_include: ["Follow-ups discovered in this run", "Unapplied review findings"],
       actions: "none",
       delegates: "none",
@@ -3595,7 +3599,6 @@ Use "Correct widget limit" as the description in the subject and any required bo
     pre_contract: "The close-out reviewed nothing for out-of-scope discoveries, so no class was reachable.",
     task: `${CAPTURE_PREFIX}Narration: added the --quiet flag to src/greet.js and its test, suite green. The flag has to print a one-line summary and this package has no convention for how any command formats its output, so I invented a shape for this one flag and left the wider question undesigned; the next person adding a flag there faces the same choice with nothing to follow.${CAPTURE_TAIL}`,
     grade: {
-      must_include: ["Follow-ups discovered in this run"],
       result_must_include: ["Follow-ups discovered in this run", "greet.js"],
       actions: "none",
       delegates: "none",
@@ -4093,6 +4096,13 @@ export function scenariosMatching(opts: {
 export function scenarioHasDecisionGrade(s: Scenario): boolean {
   const g = s.grade
   if (g.must_include?.length || g.must_include_any?.length || g.must_exclude?.length) return true
+  // WOR-92 (2026-11-05): the RESULT-block needles grade a decision more strictly
+  // than must_include, which scores against the whole of stdout -- they read only
+  // the answer the cell asked the run to declare, and grade.ts fails the host when
+  // that block is missing, so neither can pass vacuously. They were added after
+  // this guard and every cell using them also carried must_include or
+  // workspace_read, so a cell graded solely on its RESULT block read as ungraded.
+  if (g.result_must_include?.length || g.result_must_not_include?.length) return true
   if (g.declared && Object.keys(g.declared).length) return true
   if (g.delegates_must_not_include?.length) return true
   if (g.classification || g.structured_status || g.delegates === "some") return true
