@@ -14,7 +14,7 @@ execution: code
 - **Objective:** A developer who hands work to `/lfg` gets the out-of-scope problems the run ran into — a bug it hit, a design gap it skipped, tooling it worked around — handed back with enough context to act on later, instead of losing them when the run ends.
 - **Means:** A capture pass in the step-11 close-out, owned by `skills/lfg/references/shipping.md` (KTD1).
 - **Authority:** Product behavior on its R-ID; implementation mechanism on its KTD. `AGENTS.md` and `skills/CODING_STANDARDS.md` govern the prose; `.agents/skills/ce-skill-work/references/edit-skill.md` governs the edit procedure.
-- **Execution profile:** Prose changes to one skill reference, plus contract pins and one behavioral eval. No runtime code.
+- **Execution profile:** Prose changes to two skill references (`shipping.md`'s close-out, plus one sentence in `review-followup.md`), plus contract pins and one behavioral eval. No runtime code.
 - **Stop conditions:** Stop if the capture pass cannot be stated without growing `skills/lfg/SKILL.md` (KTD1 depends on costing zero body bytes), or if the `ce-skill-work` provenance search shows the close-out already owns a conflicting rule.
 - **Who finishes it:** `ce-work` implements; the `/lfg` run that planned this ships it as an open PR.
 
